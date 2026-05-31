@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>{{ group["group_name"] }}</h1>
+        <p class="subtitle">Manage members and shared expenses for this group.</p>
+    </div>
+
+    <a class="btn-link" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+</div>
+
+<div class="group-card">
+    <h2>Add Member</h2>
+
+    <form method="POST" action="{{ url_for('add_member', group_id=group['id']) }}">
+        <label>Member Name</label>
+        <input type="text" name="member_name" placeholder="Example: Amr" required>
+
+        <button type="submit">Add Member</button>
+    </form>
+</div>
+
+<br>
+
+<div class="group-card">
+    <h2>Members</h2>
+
+    {% if members %}
+        <ul class="simple-list">
+            {% for member in members %}
+                <li>{{ member["member_name"] }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="subtitle">No members yet. Add at least 2 members before adding expenses.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

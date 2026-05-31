@@ -20,6 +20,8 @@
 
             <p>Members: <strong>{{ group["member_count"] }}</strong></p>
             <p>Expenses: <strong>{{ group["expense_count"] }}</strong></p>
+            
+            <a class="btn-link" href="{{ url_for('group_details', group_id=group['id']) }}">Open Group</a>
         </div>
     {% endfor %}
 </div>

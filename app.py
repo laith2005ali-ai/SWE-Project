@@ -147,5 +147,71 @@ def add_group():
 
     return render_template("add_group.html")
 
+@app.route("/group/<int:group_id>")
+def group_details(group_id):
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+
+    group = conn.execute(
+        "SELECT * FROM groups WHERE id = ? AND user_id = ?",
+        (group_id, session["user_id"])
+    ).fetchone()
+
+    if group is None:
+        conn.close()
+        flash("Group not found.")
+        return redirect(url_for("dashboard"))
+
+    members = conn.execute(
+        "SELECT * FROM members WHERE group_id = ?",
+        (group_id,)
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "group_details.html",
+        group=group,
+        members=members
+    )
+
+
+@app.route("/group/<int:group_id>/add-member", methods=["POST"])
+def add_member(group_id):
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
+    member_name = request.form["member_name"]
+
+    conn = get_db_connection()
+
+    group = conn.execute(
+        "SELECT * FROM groups WHERE id = ? AND user_id = ?",
+        (group_id, session["user_id"])
+    ).fetchone()
+
+    if group is None:
+        conn.close()
+        flash("Group not found.")
+        return redirect(url_for("dashboard"))
+
+    if len(member_name.strip()) < 2:
+        conn.close()
+        flash("Member name must be at least 2 characters.")
+        return redirect(url_for("group_details", group_id=group_id))
+
+    conn.execute(
+        "INSERT INTO members (group_id, member_name) VALUES (?, ?)",
+        (group_id, member_name.strip())
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Member added successfully.")
+    return redirect(url_for("group_details", group_id=group_id))
+
 if __name__ == "__main__":
     app.run(debug=True)
