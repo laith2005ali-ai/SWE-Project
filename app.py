@@ -335,5 +335,86 @@ def delete_expense(expense_id):
     flash("Expense deleted successfully.")
     return redirect(url_for("group_details", group_id=group_id))
 
+@app.route("/expense/<int:expense_id>/edit", methods=["GET", "POST"])
+def edit_expense(expense_id):
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+
+    expense = conn.execute(
+        "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, session["user_id"])
+    ).fetchone()
+
+    if expense is None:
+        conn.close()
+        flash("Expense not found.")
+        return redirect(url_for("dashboard"))
+
+    group_id = expense["group_id"]
+
+    group = conn.execute(
+        "SELECT * FROM groups WHERE id = ? AND user_id = ?",
+        (group_id, session["user_id"])
+    ).fetchone()
+
+    members = conn.execute(
+        "SELECT * FROM members WHERE group_id = ?",
+        (group_id,)
+    ).fetchall()
+
+    if request.method == "POST":
+        title = request.form["title"].strip()
+        amount = float(request.form["amount"])
+        paid_by = request.form["paid_by"]
+        expense_date = request.form["expense_date"]
+        notes = request.form["notes"]
+
+        split_count = len(members)
+
+        if len(title) < 3:
+            flash("Expense title must be at least 3 characters.")
+            conn.close()
+            return redirect(url_for("edit_expense", expense_id=expense_id))
+
+        if not validate_expense_amount(amount):
+            flash("Amount must be greater than zero.")
+            conn.close()
+            return redirect(url_for("edit_expense", expense_id=expense_id))
+
+        conn.execute(
+            """
+            UPDATE expenses
+            SET title = ?, amount = ?, paid_by = ?, split_count = ?, expense_date = ?, notes = ?
+            WHERE id = ? AND user_id = ?
+            """,
+            (
+                title,
+                amount,
+                paid_by,
+                split_count,
+                expense_date,
+                notes,
+                expense_id,
+                session["user_id"]
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        flash("Expense updated successfully.")
+        return redirect(url_for("group_details", group_id=group_id))
+
+    conn.close()
+
+    return render_template(
+        "edit_expense.html",
+        expense=expense,
+        group=group,
+        members=members
+    )
+
 if __name__ == "__main__":
     app.run(debug=True)
