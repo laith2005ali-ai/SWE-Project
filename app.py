@@ -305,5 +305,35 @@ def add_expense(group_id):
 
     return render_template("add_expense.html", group=group, members=members)
 
+@app.route("/expense/<int:expense_id>/delete", methods=["POST"])
+def delete_expense(expense_id):
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+
+    expense = conn.execute(
+        "SELECT * FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, session["user_id"])
+    ).fetchone()
+
+    if expense is None:
+        conn.close()
+        flash("Expense not found.")
+        return redirect(url_for("dashboard"))
+
+    group_id = expense["group_id"]
+
+    conn.execute(
+        "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+        (expense_id, session["user_id"])
+    )
+
+    conn.commit()
+    conn.close()
+
+    flash("Expense deleted successfully.")
+    return redirect(url_for("group_details", group_id=group_id))
+
 if __name__ == "__main__":
     app.run(debug=True)

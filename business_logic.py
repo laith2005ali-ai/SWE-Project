@@ -36,11 +36,12 @@ def calculate_group_summary(expenses):
         share = calculate_share(expense["amount"], expense["split_count"])
 
         summary.append({
-            "title": expense["title"],
-            "amount": expense["amount"],
-            "paid_by": expense["paid_by"],
-            "split_count": expense["split_count"],
-            "share": share
-        })
+    "id": expense["id"],
+    "title": expense["title"],
+    "amount": expense["amount"],
+    "paid_by": expense["paid_by"],
+    "split_count": expense["split_count"],
+    "share": share
+})
 
     return summary
