@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="auth-card">
+    <h1>Add Expense</h1>
+    <p class="subtitle">Add a shared expense for {{ group["group_name"] }}.</p>
+
+    {% if members|length < 2 %}
+        <div class="flash-box">
+            <p>You need at least 2 members before adding an expense.</p>
+        </div>
+
+        <p class="small-text">
+            <a href="{{ url_for('group_details', group_id=group['id']) }}">Back to Group</a>
+        </p>
+    {% else %}
+
+        <form method="POST">
+            <label>Expense Title</label>
+            <input type="text" name="title" placeholder="Example: Dinner, Groceries, Taxi" required>
+
+            <label>Amount</label>
+            <input type="number" name="amount" step="0.01" min="0.01" placeholder="Example: 300" required>
+
+            <label>Paid By</label>
+            <select name="paid_by" required>
+                {% for member in members %}
+                    <option value="{{ member['member_name'] }}">{{ member["member_name"] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Expense Date</label>
+            <input type="date" name="expense_date" required>
+
+            <label>Notes</label>
+            <textarea name="notes" placeholder="Optional notes"></textarea>
+
+            <button type="submit">Add Expense</button>
+        </form>
+
+        <p class="small-text">
+            <a href="{{ url_for('group_details', group_id=group['id']) }}">Back to Group</a>
+        </p>
+
+    {% endif %}
+</div>
+
+{% endblock %}

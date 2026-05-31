@@ -2,7 +2,14 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import get_db_connection, init_db
-from business_logic import validate_group_name
+from business_logic import (
+    validate_group_name,
+    validate_expense_amount,
+    validate_member_count,
+    calculate_share,
+    calculate_total_expenses,
+    calculate_group_summary
+)
 
 app = Flask(__name__)
 app.secret_key = "splitmate_secret_key"
@@ -169,12 +176,23 @@ def group_details(group_id):
         (group_id,)
     ).fetchall()
 
+    expenses = conn.execute(
+        "SELECT * FROM expenses WHERE group_id = ? AND user_id = ? ORDER BY expense_date DESC",
+        (group_id, session["user_id"])
+    ).fetchall()
+
+    total_expenses = calculate_total_expenses(expenses)
+    expense_summary = calculate_group_summary(expenses)
+
     conn.close()
 
     return render_template(
         "group_details.html",
         group=group,
-        members=members
+        members=members,
+        expenses=expenses,
+        total_expenses=total_expenses,
+        expense_summary=expense_summary
     )
 
 
@@ -212,6 +230,80 @@ def add_member(group_id):
 
     flash("Member added successfully.")
     return redirect(url_for("group_details", group_id=group_id))
+
+@app.route("/group/<int:group_id>/add-expense", methods=["GET", "POST"])
+def add_expense(group_id):
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+
+    group = conn.execute(
+        "SELECT * FROM groups WHERE id = ? AND user_id = ?",
+        (group_id, session["user_id"])
+    ).fetchone()
+
+    if group is None:
+        conn.close()
+        flash("Group not found.")
+        return redirect(url_for("dashboard"))
+
+    members = conn.execute(
+        "SELECT * FROM members WHERE group_id = ?",
+        (group_id,)
+    ).fetchall()
+
+    if request.method == "POST":
+        title = request.form["title"].strip()
+        amount = float(request.form["amount"])
+        paid_by = request.form["paid_by"]
+        expense_date = request.form["expense_date"]
+        notes = request.form["notes"]
+
+        split_count = len(members)
+
+        if not validate_member_count(split_count):
+            flash("You need at least 2 members to split expenses.")
+            conn.close()
+            return redirect(url_for("group_details", group_id=group_id))
+
+        if len(title) < 3:
+            flash("Expense title must be at least 3 characters.")
+            conn.close()
+            return redirect(url_for("add_expense", group_id=group_id))
+
+        if not validate_expense_amount(amount):
+            flash("Amount must be greater than zero.")
+            conn.close()
+            return redirect(url_for("add_expense", group_id=group_id))
+
+        conn.execute(
+            """
+            INSERT INTO expenses 
+            (user_id, group_id, title, amount, paid_by, split_count, expense_date, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                session["user_id"],
+                group_id,
+                title,
+                amount,
+                paid_by,
+                split_count,
+                expense_date,
+                notes
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        flash("Expense added successfully.")
+        return redirect(url_for("group_details", group_id=group_id))
+
+    conn.close()
+
+    return render_template("add_expense.html", group=group, members=members)
 
 if __name__ == "__main__":
     app.run(debug=True)

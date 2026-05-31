@@ -8,7 +8,10 @@
         <p class="subtitle">Manage members and shared expenses for this group.</p>
     </div>
 
-    <a class="btn-link" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+    <div>
+        <a class="btn-link" href="{{ url_for('add_expense', group_id=group['id']) }}">+ Add Expense</a>
+        <a class="btn-link" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+    </div>
 </div>
 
 <div class="group-card">
@@ -35,6 +38,34 @@
         </ul>
     {% else %}
         <p class="subtitle">No members yet. Add at least 2 members before adding expenses.</p>
+    {% endif %}
+</div>
+<br>
+
+<div class="group-card">
+    <h2>Total Expenses</h2>
+    <p class="big-number">{{ total_expenses }} TL</p>
+</div>
+
+<br>
+
+<div class="group-card">
+    <h2>Expense Summary</h2>
+
+    {% if expense_summary %}
+        <ul class="simple-list">
+            {% for item in expense_summary %}
+                <li>
+                    <strong>{{ item["title"] }}</strong><br>
+                    Amount: {{ item["amount"] }} TL<br>
+                    Paid by: {{ item["paid_by"] }}<br>
+                    Split between: {{ item["split_count"] }} people<br>
+                    Each person pays: {{ item["share"] }} TL
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="subtitle">No expenses yet.</p>
     {% endif %}
 </div>
 
