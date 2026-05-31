@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Manage your expense groups.</p>
+    </div>
+</div>
+
+{% if groups %}
+
+<div class="cards-grid">
+    {% for group in groups %}
+        <div class="group-card">
+            <h2>{{ group["group_name"] }}</h2>
+
+            <p>Members: <strong>{{ group["member_count"] }}</strong></p>
+            <p>Expenses: <strong>{{ group["expense_count"] }}</strong></p>
+        </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<div class="empty-box">
+    <h2>No groups yet</h2>
+    <p>Your expense groups will appear here.</p>
+</div>
+
+{% endif %}
+
+{% endblock %}
