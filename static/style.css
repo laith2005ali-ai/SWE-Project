@@ -136,3 +136,22 @@ button:hover {
 .empty-box {
     text-align: center;
 }
+.btn-link {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 11px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-link:hover {
+    background: #1d4ed8;
+}
+
+.group-card h2 {
+    margin-bottom: 15px;
+}

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import get_db_connection, init_db
+from business_logic import validate_group_name
 
 app = Flask(__name__)
 app.secret_key = "splitmate_secret_key"
@@ -119,6 +120,32 @@ def dashboard():
 
     return render_template("dashboard.html", groups=groups)
 
+@app.route("/add-group", methods=["GET", "POST"])
+def add_group():
+    if not is_logged_in():
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        group_name = request.form["group_name"]
+
+        if not validate_group_name(group_name):
+            flash("Group name must be at least 2 characters.")
+            return redirect(url_for("add_group"))
+
+        conn = get_db_connection()
+
+        conn.execute(
+            "INSERT INTO groups (user_id, group_name) VALUES (?, ?)",
+            (session["user_id"], group_name.strip())
+        )
+
+        conn.commit()
+        conn.close()
+
+        flash("Group created successfully.")
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_group.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
